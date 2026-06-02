@@ -1,0 +1,14 @@
+├── manifest.json
+├── popup.html
+├── content_proxy.js
+├── injected_page.js
+├── dist/
+│   ├── background.js
+│   └── popup.js
+├── icons/
+│   ├── icon16.svg
+│   ├── icon48.svg
+│   └── icon128.svg
+└── vendor/
+    ├── bootstrap.min.css
+    └── papaparse.js

@@ -1,0 +1,16 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build:popup": "esbuild src/popup/index.js --bundle --minify --sourcemap --outfile=dist/popup.js",
+    "build:background": "esbuild src/background/background.js --bundle --platform=browser --outfile=dist/background.js",
+    "build": "npm run build:popup && npm run build:background"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.27.2"
+  }
+}

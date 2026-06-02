@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Mosaic Fetcher</title>
+	<script src="vendor/papaparse.js"></script>
+	<link href="vendor/bootstrap.min.css" rel="stylesheet">
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			padding: 12px;
+			min-width: 520px;
+		}
+
+		@keyframes spin {
+			from { transform: rotate(0deg); }
+			to { transform: rotate(360deg); }
+		}
+
+		input {
+			width: 100%;
+			margin-bottom: 8px;
+			padding: 6px;
+		}
+
+		button {
+			width: 100%;
+			padding: 8px;
+		}
+
+		pre {
+			background: #f8f8f8;
+			padding: 8px;
+			min-height: 200px;
+			overflow: auto
+		}
+
+		.hidden {
+			display: none;
+		}
+
+		#siteStatus {
+			background-color: #d4edda;
+			border: 1px solid #c3e6cb;
+			border-radius: 4px;
+			display: flex !important;
+		}
+
+		#siteStatus.not-found {
+			background-color: #f8f9fa;
+			border: 1px solid #dee2e6;
+			color: #666;
+		}
+
+		/* Card styles from exemple-html.html */
+		.data-card {
+			margin-bottom: 1rem;
+			border: 1px solid #e0e0e0;
+			border-radius: 0.25rem;
+			box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+		}
+
+		.data-card-header {
+			background-color: #f8f9fa;
+			padding: 0.75rem 1.25rem;
+			border-bottom: 1px solid #e0e0e0;
+			font-weight: bold;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 0.5rem;
+		}
+
+		.data-card-header .data-card-title {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.data-card-header .data-card-actions {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		.import-btn {
+			display: none;
+			align-items: center;
+			justify-content: center;
+			padding: 0.25rem 0.4rem;
+			border: 1px solid #ced4da;
+			background: #fff;
+			border-radius: 0.25rem;
+			cursor: pointer;
+			font-size: 0.9rem;
+			line-height: 1;
+		}
+
+		.copy-json-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0.25rem 0.6rem;
+			border: 1px solid #ced4da;
+			background: #fff;
+			border-radius: 0.25rem;
+			cursor: pointer;
+			font-size: 0.9rem;
+			line-height: 1;
+		}
+
+		.data-card-header.active .import-btn {
+			display: inline-flex;
+		}
+
+		.file-input {
+			display: none;
+		}
+
+		.data-card-header.active {
+			background-color: #e9ecef;
+		}
+
+		.data-card-body {
+			padding: 1.25rem;
+			display: none;
+		}
+
+		.data-card-body.show {
+			display: block;
+		}
+
+		.field-item {
+			margin-bottom: 0.5rem;
+			flex: 0 0 auto;
+			margin-right: 1rem;
+		}
+
+		.row-line {
+			display: flex;
+			flex-wrap: nowrap;
+			gap: 0.5rem;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			padding-bottom: 0.25rem;
+		}
+
+		.row-line .field-item {
+			display: inline-block;
+		}
+
+		.field-name {
+			font-weight: 500;
+			color: #343a40;
+		}
+
+		.field-id {
+			font-size: 0.85em;
+			color: #6c757d;
+		}
+
+		#createItemBtn {
+			margin-top: 8px;
+			background: #007bff;
+			color: #fff;
+			border: none;
+			padding: 8px;
+		}
+
+		#clearCacheBtn {
+			margin-top: 8px;
+			background: #6c757d;
+			color: #fff;
+			border: none;
+			padding: 8px;
+		}
+	</style>
+</head>
+
+<body>
+	<h3>Mosaic Fetch</h3>
+
+	<!-- Site status indicator -->
+	<div id="siteStatus" style="margin-bottom:12px;padding:10px;border-radius:4px;display:none;align-items:center;gap:8px;">
+		<span id="siteStatusIcon" style="font-size:20px;"></span>
+		<div>
+			<div id="siteStatusText" style="font-weight:500;font-size:14px;"></div>
+			<div id="siteStatusWebhook" style="font-size:12px;color:#666;margin-top:2px;"></div>
+		</div>
+	</div>
+
+	<div id="configInfo" style="margin-bottom:8px;color:#555;font-size:13px;display:none;">Конфигурация берётся со страницы (no
+		inputs
+		required).</div>
+
+	<!-- Loading indicator -->
+	<div id="loadingIndicator" style="display:none;text-align:center;padding:12px;color:#0066cc;">
+		<div style="display:inline-block;animation:spin 1s linear infinite;">⏳</div>
+		<div style="font-size:13px;margin-top:4px;">Загружаю данные...</div>
+	</div>
+
+	<button id="fetchBtn" style="display:none;">Fetch Mosaic</button>
+	<br/>
+	<button id="createItemBtn"
+		style="margin-top:8px;background:#007bff;color:#fff;border:none;padding:8px;display:none;">Создать элемент в коллекции</button>
+
+	<div class="input-group mb-3">
+		<input type="text" id="webhookInput" class="form-control" placeholder="Получить данные из вебхука" aria-label="get data from webhook"
+			aria-describedby="basic-addon2">
+		<div class="input-group-append">
+			<button id="webhookGoBtn" class="btn btn-outline-secondary" type="button">Перейти</button>
+		</div>
+	</div>
+	<button id="clearCacheBtn" style="margin-top:8px;background:#6c757d;color:#fff;border:none;padding:8px;">Очистить кэш</button>
+
+	<div id="status" style="margin-top:8px;color:#333"></div>
+
+	<!-- Rendered data will appear here -->
+	<div id="data-container"></div>
+
+	<pre id="result" style="margin-top:8px;white-space:pre-wrap;word-break:break-word;"></pre>
+
+	<script src="dist/popup.js"></script>
+</body>
+
+</html>
